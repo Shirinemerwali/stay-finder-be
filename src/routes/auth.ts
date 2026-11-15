@@ -1,3 +1,4 @@
+
 import { Hono } from "hono";
 import { authValidator } from "../validators/authValidator.js";
 import { getUser, login, register } from "../database/auth.js";
@@ -33,7 +34,7 @@ auth.post("/login", authValidator, async (c) => {
     const user = await login(sb, email, password);
     return c.json({ user }, 200);
   } catch (e: any) {
-    console.warn("Error in registering", e);
+    console.warn("Error in logging in", e);
     return c.json(
       {
         message: "Invalid credentials",
@@ -45,9 +46,8 @@ auth.post("/login", authValidator, async (c) => {
 
 auth.get("/me", requireAuth, async (c) => {
   const sb = c.get("supabase");
-  console.log("Getting user", c.get("user"));
-  try {
 
+  try {
     const user = await getUser(sb);
     return c.json({ user }, 200);
   } catch (e: any) {
@@ -58,6 +58,24 @@ auth.get("/me", requireAuth, async (c) => {
       },
       500,
     );
+  }
+});
+
+// Logout
+auth.post("/logout", requireAuth, async (c) => {
+  const sb = c.get("supabase");
+
+  try {
+    const { error } = await sb.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+
+    return c.json({ message: "Logged out successfully" }, 200);
+  } catch (e) {
+    console.warn("Error in logging out", e);
+    return c.json({ message: "Could not log out" }, 500);
   }
 });
 

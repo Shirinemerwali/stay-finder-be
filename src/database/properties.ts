@@ -1,3 +1,4 @@
+
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 
 import type { BasicSupabaseClient } from "../types/supabase.js";
@@ -31,32 +32,39 @@ type PropertyListFilter = Partial<{
   maxPrice: number;
   location: string;
   maxGuests: number;
+  sort: "asc" | "desc";
 }>;
 
 function buildPropertiesFilter(
   query: PropertyListQuery,
   filters: PropertyListFilter,
-) {
-  if (filters.maxPrice) {
+): PropertyListQuery {
+  if (filters.maxPrice !== undefined) {
     query = query.lte("price_per_night", filters.maxPrice);
   }
 
-  if (filters.maxGuests) {
-    query = query.lte("max_guests", filters.maxGuests);
+  if (filters.maxGuests !== undefined) {
+    query = query.gte("max_guests", filters.maxGuests);
   }
 
   if (filters.location && filters.location.trim().length > 2) {
-    query = query.ilike("location", `%${filters.location}%`);
+    query = query.ilike("location", `%${filters.location.trim()}%`);
   }
+
+  if (filters.sort) {
+    query = query.order("price_per_night", {
+      ascending: filters.sort === "asc",
+    });
+  }
+
+  return query;
 }
 
 export async function getProperties(
   sb: BasicSupabaseClient,
   filters: PropertyListFilter,
 ): Promise<Property[]> {
-  const query = selectProperties(sb);
-
-  buildPropertiesFilter(query, filters);
+  const query = buildPropertiesFilter(selectProperties(sb), filters);
 
   const { error, data } = await query;
 
@@ -71,9 +79,10 @@ export async function getPropertiesByKind(
   kind: PropertyKind,
   filters: PropertyListFilter,
 ): Promise<Property[]> {
-  const query = selectProperties(sb).eq(QUERY_KIND, kind);
-
-  buildPropertiesFilter(query, filters);
+  const query = buildPropertiesFilter(
+    selectProperties(sb).eq(QUERY_KIND, kind),
+    filters,
+  );
 
   const { error, data } = await query;
 

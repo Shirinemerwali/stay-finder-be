@@ -1,7 +1,5 @@
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 
-import { sb } from "../lib/supabase.js";
-
 import type { Booking, NewBooking, BookingValidKey } from "../types/booking.js";
 import type { BasicSupabaseClient } from "../types/supabase.js";
 
@@ -24,6 +22,7 @@ const QUERY_ID = "booking_id";
 const QUERY_PROPERTY_ID = "property_id";
 
 export async function getBookingsByPropertyId(
+  sb: BasicSupabaseClient,
   propertyId: string,
 ): Promise<Booking[]> {
   const { error, data } = await sb
@@ -35,6 +34,7 @@ export async function getBookingsByPropertyId(
   if (!error) {
     return data as any as Booking[];
   }
+
   throw error;
 }
 
@@ -42,7 +42,6 @@ export async function createBooking(
   sb: BasicSupabaseClient,
   bookingBody: NewBooking,
 ): Promise<Booking> {
-  console.log(bookingBody)
   const { error, data }: PostgrestSingleResponse<Booking> = await sb
     .from(TABLE_NAME)
     .insert(bookingBody)
@@ -52,10 +51,12 @@ export async function createBooking(
   if (!error) {
     return data;
   }
+
   throw error;
 }
 
 export async function updateBooking(
+  sb: BasicSupabaseClient,
   propertyId: string,
   bookingId: string,
   booking: Partial<Booking>,
@@ -71,10 +72,15 @@ export async function updateBooking(
   if (!error) {
     return data;
   }
+
   throw error;
 }
 
-export async function deleteBooking(propertyId: string, bookingId: string) {
+export async function deleteBooking(
+  sb: BasicSupabaseClient,
+  propertyId: string,
+  bookingId: string,
+) {
   const { error }: PostgrestSingleResponse<Booking> = await sb
     .from(TABLE_NAME)
     .delete()
@@ -86,5 +92,6 @@ export async function deleteBooking(propertyId: string, bookingId: string) {
   if (!error) {
     return;
   }
+
   throw error;
 }

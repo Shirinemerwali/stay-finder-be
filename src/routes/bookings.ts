@@ -17,11 +17,12 @@ const FOREIGN_KEY_VIOLATION = "23503";
 
 const bookings = new Hono({ strict: false });
 
-// Lista alla bookings för en Property
-bookings.get("/properties/:propertyId", async (c) => {
-  const propertyId = c.req.param("propertyId");
+bookings.get("/properties/:propertyId", requireAuth, async (c) => {
+  const propertyId = c.req.param("propertyId")!;
+  const sb = c.get("supabase");
+
   try {
-    const bookings = await getBookingsByPropertyId(propertyId);
+    const bookings = await getBookingsByPropertyId(sb, propertyId);
     return c.json(bookings);
   } catch (e) {
     console.warn("Error in fetching bookings from SB database", e);
@@ -29,38 +30,50 @@ bookings.get("/properties/:propertyId", async (c) => {
   }
 });
 
-// Skapa en Booking för en Property, property_id tas från URL:en
-bookings.post("/properties/:propertyId", bookingValidator, requireAuth, async (c) => {
-  const propertyId = c.req.param("propertyId");
-  const bookingBody = c.req.valid("json");
-  const sb = c.get("supabase")
-  const user = c.get("user") as User
-  try {
-    const booking = await createBooking(sb, {
-      ...bookingBody,
-      property_id: propertyId,
-      user_id: user.id
-    });
-    return c.json(booking, 201);
-  } catch (e) {
-    console.warn("Error in inserting booking into SB DB", e);
-    if ((e as PostgrestError).code === FOREIGN_KEY_VIOLATION) {
-      return c.json(null, 404);
-    }
-    return c.json(e, 500);
-  }
-});
+bookings.post(
+  "/properties/:propertyId",
+  bookingValidator,
+  requireAuth,
+  async (c) => {
+    const propertyId = c.req.param("propertyId")!;
+    const bookingBody = c.req.valid("json");
+    const sb = c.get("supabase");
+    const user = c.get("user") as User;
 
-// Uppdatera en Booking om den finns och tillhör Propertyn
+    try {
+      const booking = await createBooking(sb, {
+        ...bookingBody,
+        property_id: propertyId,
+        user_id: user.id,
+      });
+      return c.json(booking, 201);
+    } catch (e) {
+      console.warn("Error in inserting booking into SB DB", e);
+      if ((e as PostgrestError).code === FOREIGN_KEY_VIOLATION) {
+        return c.json(null, 404);
+      }
+      return c.json(e, 500);
+    }
+  },
+);
+
 bookings.patch(
   "/properties/:propertyId/:bookingId",
   bookingOptionalValidator,
+  requireAuth,
   async (c) => {
-    const propertyId = c.req.param("propertyId");
-    const bookingId = c.req.param("bookingId");
+    const propertyId = c.req.param("propertyId")!;
+    const bookingId = c.req.param("bookingId")!;
     const bookingBody = c.req.valid("json");
+    const sb = c.get("supabase");
+
     try {
-      const booking = await updateBooking(propertyId, bookingId, bookingBody);
+      const booking = await updateBooking(
+        sb,
+        propertyId,
+        bookingId,
+        bookingBody,
+      );
       return c.json(booking);
     } catch (e) {
       console.warn("Error updating booking in SB DB", e);
@@ -69,17 +82,22 @@ bookings.patch(
   },
 );
 
-// Ta bort en Booking om den finns och tillhör Propertyn
-bookings.delete("/properties/:propertyId/:bookingId", async (c) => {
-  const propertyId = c.req.param("propertyId");
-  const bookingId = c.req.param("bookingId");
-  try {
-    await deleteBooking(propertyId, bookingId);
-    return c.json(null, 200);
-  } catch (e) {
-    console.warn("Error in deleting booking", e);
-    return c.json(null, 404);
-  }
-});
+bookings.delete(
+  "/properties/:propertyId/:bookingId",
+  requireAuth,
+  async (c) => {
+    const propertyId = c.req.param("propertyId")!;
+    const bookingId = c.req.param("bookingId")!;
+    const sb = c.get("supabase");
+
+    try {
+      await deleteBooking(sb, propertyId, bookingId);
+      return c.json(null, 200);
+    } catch (e) {
+      console.warn("Error in deleting booking", e);
+      return c.json(null, 404);
+    }
+  },
+);
 
 export default bookings;
