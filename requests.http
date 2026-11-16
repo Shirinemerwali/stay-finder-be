@@ -1,0 +1,71 @@
+
+
+### Hämta alla bostäder
+GET http://localhost:3000/properties
+
+### Hämta endast lägenheter
+GET http://localhost:3000/properties/kind/apartment
+
+
+### Hämta bostäder med maxpris 200 kr
+GET http://localhost:3000/properties?maxprice=200
+
+### Sortera bostäder – lägsta pris först
+GET http://localhost:3000/properties?sort=asc
+
+### Sortera bostäder – högsta pris först
+GET http://localhost:3000/properties?sort=desc
+
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+   "email": "DIN_EMAIL",
+  "password": "DITT_LÖSENORD"
+}
+### 8. Hämta bokningar för en bostad
+GET http://localhost:3000/bookings/properties/17652534-d292-457a-906b-98a6d4c923ea
+
+
+### 9. Skapa en bokning
+POST http://localhost:3000/bookings/properties/17652534-d292-457a-906b-98a6d4c923ea
+Content-Type: application/json
+
+{
+  "check_in": "2026-12-10",
+  "check_out": "2026-12-13"
+}
+
+### Create booking
+POST http://localhost:3000/bookings/properties/17652534-d292-457a-906b-98a6d4c923ea
+Content-Type: application/json
+
+{
+  "guest_name": "Test Guest",
+  "guest_email": "test@example.com",
+  "check_in": "2026-12-01",
+  "check_out": "2026-12-05",
+  "guests": 2,
+  "status": "pending"
+}
+
+### Kontrollera inloggad användare
+GET http://localhost:3000/auth/me
+
+
+### Hämta bokningar
+GET http://localhost:3000/bookings/properties/17652534-d292-457a-906b-98a6d4c923ea
+
+### Skapa bokning
+POST http://localhost:3000/bookings/properties/17652534-d292-457a-906b-98a6d4c923ea
+Content-Type: application/json
+
+{
+  "guest_name": "Test Guest",
+  "guest_email": "test@example.com",
+  "check_in": "2026-12-10",
+  "check_out": "2026-12-13",
+  "guests": 2,
+  "status": "pending"
+}
